@@ -75,19 +75,18 @@ controller.on('frame', (frame) => {
   payload.on = desiredOn;
   currentLightState.on = desiredOn;
 
-  if (!currentLightState.on) return;
+  if (currentLightState.on) {
+    const extendedCount = hand.fingers.filter((f) => f.extended).length;
+    debug(`Extended count: ${extendedCount}`);
 
-  const extendedCount = hand.fingers.filter((f) => f.extended).length;
-  debug(`Extended count: ${extendedCount}`);
-
-  if (extendedCount === 2) {
-    debug('Adjusting brightness');
-    const palmHeight = hand.stabilizedPalmPosition[1];
-    const desiredBri = mapRange(
-      palmHeight,
-      GESTURE_MAPPING.brightness.minHeight,
-      GESTURE_MAPPING.brightness.maxHeight,
-      1,
+    if (extendedCount === 2) {
+      debug('Adjusting brightness');
+      const palmHeight = hand.stabilizedPalmPosition[1];
+      const desiredBri = mapRange(
+        palmHeight,
+        GESTURE_MAPPING.brightness.minHeight,
+        GESTURE_MAPPING.brightness.maxHeight,
+        1,
         254
       );
       if (desiredBri !== currentLightState.bri) {
@@ -111,8 +110,24 @@ controller.on('frame', (frame) => {
         currentLightState.ct = desiredCt;
       }
     }
+  }
 
   updateHueLights(payload);
 });
+
+const shutdown = async () => {
+  console.log('Shutting down gracefully...');
+  try {
+    await controller.disconnect();
+    console.log('Leap Motion controller disconnected');
+    process.exit(0);
+  } catch (error) {
+    console.error('Error during shutdown:', error);
+    process.exit(1);
+  }
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 controller.connect();
