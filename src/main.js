@@ -5,6 +5,11 @@ const LEAPD_HOST = process.env['LEAPD_HOST'];
 const BRIDGE_IP = process.env['BRIDGE_IP'];
 const BRIDGE_USERNAME = process.env['BRIDGE_USERNAME'];
 const LIGHT_IDS = process.env['LIGHT_IDS'].split(',');
+const DEBUG = process.env['DEBUG'] === 'true';
+
+const debug = (message) => {
+  if (DEBUG) console.log(message);
+};
 
 const GESTURE_MAPPING = {
   brightness: { minHeight: 150, maxHeight: 280 },
@@ -54,31 +59,35 @@ controller.on('frame', (frame) => {
 
   const payload = {};
 
-  frame.hands.forEach((hand) => {
-    const palmNormalY = hand.palmNormal[1];
-    let desiredOn = currentLightState.on;
+  if (frame.hands.length !== 1) return;
 
-    if (palmNormalY > GESTURE_MAPPING.toggle.offThreshold) {
-      desiredOn = false;
-    } else if (palmNormalY < GESTURE_MAPPING.toggle.onThreshold) {
-      desiredOn = true;
-    }
+  const hand = frame.hands[0];
 
-    payload.on = desiredOn;
-    currentLightState.on = desiredOn;
+  const palmNormalY = hand.palmNormal[1];
+  let desiredOn = currentLightState.on;
 
-    if (!currentLightState.on) return;
+  if (palmNormalY > GESTURE_MAPPING.toggle.offThreshold) {
+    desiredOn = false;
+  } else if (palmNormalY < GESTURE_MAPPING.toggle.onThreshold) {
+    desiredOn = true;
+  }
 
-    const extendedCount = hand.fingers.filter((f) => f.extended).length;
-    console.log(extendedCount)
+  payload.on = desiredOn;
+  currentLightState.on = desiredOn;
 
-    if (extendedCount === 2) {
-      const palmHeight = hand.stabilizedPalmPosition[1];
-      const desiredBri = mapRange(
-        palmHeight,
-        GESTURE_MAPPING.brightness.minHeight,
-        GESTURE_MAPPING.brightness.maxHeight,
-        1,
+  if (!currentLightState.on) return;
+
+  const extendedCount = hand.fingers.filter((f) => f.extended).length;
+  debug(`Extended count: ${extendedCount}`);
+
+  if (extendedCount === 2) {
+    debug('Adjusting brightness');
+    const palmHeight = hand.stabilizedPalmPosition[1];
+    const desiredBri = mapRange(
+      palmHeight,
+      GESTURE_MAPPING.brightness.minHeight,
+      GESTURE_MAPPING.brightness.maxHeight,
+      1,
         254
       );
       if (desiredBri !== currentLightState.bri) {
@@ -88,6 +97,7 @@ controller.on('frame', (frame) => {
     }
 
     if (extendedCount === 3) {
+      debug('Adjusting color temperature');
       const palmHeight = hand.stabilizedPalmPosition[1];
       const desiredCt = mapRange(
         palmHeight,
@@ -101,7 +111,6 @@ controller.on('frame', (frame) => {
         currentLightState.ct = desiredCt;
       }
     }
-  });
 
   updateHueLights(payload);
 });
