@@ -1,0 +1,13 @@
+{
+  "name": "leapmotion-hue-bridge",
+  "version": "1.0.0",
+  "description": "Control Philips Hue lights with hand gestures using Leap Motion controller",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["leap-motion", "philips-hue", "gesture-control"],
+  "author": "",
+  "license": "ISC"
+}
