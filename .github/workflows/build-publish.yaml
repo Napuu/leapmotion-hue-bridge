@@ -16,7 +16,7 @@ on:
 env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
-  IMAGE_NAME: napuu/quorum-vault-auto-unsealer
+  IMAGE_NAME: napuu/leapmotion-hue-bridge
 
 
 jobs:
